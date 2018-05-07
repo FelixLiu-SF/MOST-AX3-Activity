@@ -173,10 +173,10 @@ if(exist('day_summary','var') && exist('metadata','var'))
         end
         
         if(jx>1 && tmp_total>=480)
-            if(tmp_raw_wtv>=360 && tmp_total>=960)
+            if(tmp_wtv>=360 && tmp_total>=960)
                 counter_6 = counter_6+1;
             end
-            if(tmp_raw_wtv>=600 && tmp_total>=960)
+            if(tmp_wtv>=600 && tmp_total>=960)
                 counter_10 = counter_10+1;
             end
             if(tmp_nw>=1)

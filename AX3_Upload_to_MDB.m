@@ -139,6 +139,10 @@ if(exist('day_summary','var') && exist('metadata','var'))
         tmp_slprise = day_summary(jx).slprise;
         tmp_date    = day_summary(jx).date;
         
+        if(isempty(tmp_wtv))
+            tmp_wtv = 0;
+        end
+        
         if(~isempty(tmp_slprise))
             tmp_rise = tmp_slprise(find(tmp_slprise(:,2)==1,1,'first'),:);
             dummy_rise = tmp_rise;

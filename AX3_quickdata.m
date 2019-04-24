@@ -21,6 +21,7 @@ data = struct(...
     'TimeStamp',[],...
     'SampleRate',[],...
     'SampleCount',[],...
+    'PackingFormat',[],...
     'e',[],...
     'x',[],...
     'y',[],...
@@ -39,7 +40,8 @@ metadata = struct(...
     'Battery',[],...
     'TimeStamp',[],...
     'SampleRate',[],...
-    'SampleCount',[]); 
+    'SampleCount',[],...
+    'PackingFormat',[]); 
 
 %open file for reading
 fid = fopen(filename,'r');
@@ -76,11 +78,14 @@ fseek(fid,1047,'bof');
 data.Battery = fread(fid,1,'uint8');            %1024+23 +1
 
 fseek(fid,1048,'bof');
-RateCode = fread(fid,1,'uint8');                %1024+14 +1
+RateCode = fread(fid,1,'uint8');                %1024+24 +1
 data.SampleRate = 3200/(bitshift(1,(15-bitand(15,RateCode))));
 
+fseek(fid,1049,'bof');
+data.PackingFormat = fread(fid, 1, 'uint8');    %1024+25 +1
+
 fseek(fid,1052,'bof');
-data.SampleCount = fread(fid,1,'uint16');       %1024+14 +2
+data.SampleCount = fread(fid,1,'uint16');       %1024+28 +2
 
 %get length of file in bytes
 fseek(fid,0,'eof');                             % go to end of file
@@ -99,20 +104,43 @@ data.offset = fread(fid,numPackets,'int16',510);
 
 %read accelerometer data
 fseek(fid,1054,'bof');
-ACC = fread(fid,[data.SampleCount,Inf],horzcat(num2str(data.SampleCount),'*uint32'),32);
-ACCsz = size(ACC);
-ACC = reshape(ACC,(ACCsz(1)*ACCsz(2)),1);
 
-e = int32(2 .^ bitshift(ACC, -30));
-x = int32(bitand(         ACC      , 1023)); 
-y = int32(bitand(bitshift(ACC, -10), 1023)); 
-z = int32(bitand(bitshift(ACC, -20), 1023)); 
-
-data.e = e;
-data.x = e .* (x - (int32(1024) .* int32(x >= 512)));
-data.y = e .* (y - (int32(1024) .* int32(y >= 512)));
-data.z = e .* (z - (int32(1024) .* int32(z >= 512)));
+if numAxesBPS == 3*16 + 0 % packed data, 120 samples, 32-bit
     
+    ACC = fread(fid,[data.SampleCount,Inf],horzcat(num2str(data.SampleCount),'*uint32'),32);
+    ACCsz = size(ACC);
+    ACC = reshape(ACC,(ACCsz(1)*ACCsz(2)),1);
+
+    e = int32(2 .^ bitshift(ACC, -30));
+    x = int32(bitand(         ACC      , 1023)); 
+    y = int32(bitand(bitshift(ACC, -10), 1023)); 
+    z = int32(bitand(bitshift(ACC, -20), 1023)); 
+
+    data.e = e;
+    data.x = e .* (x - (int32(1024) .* int32(x >= 512)));
+    data.y = e .* (y - (int32(1024) .* int32(y >= 512)));
+    data.z = e .* (z - (int32(1024) .* int32(z >= 512)));
+
+elseif numAxesBPS == 3*16 + 2 % unpacked data, 80 samples, 48-bit
+    
+    ACC = fread(fid,[data.SampleCount,Inf],horzcat(num2str(3*data.SampleCount),'*int16'),32);
+    ACCsz = size(ACC);
+    ACC = reshape(ACC,(ACCsz(1)*ACCsz(2)),1);
+
+    data.e = 1; % no modulation in unpacked data format
+    data.x = ACC(1:3:(end-2));
+    data.y = ACC(2:3:(end-1));
+    data.z = ACC(3:3:end);
+    
+else % unknown data format
+    
+    data.e = [];
+    data.x = [];
+    data.y = [];
+    data.z = [];
+    
+end
+
 fclose(fid);
 
 metadata.Packet1 = data.Packet1;
@@ -126,6 +154,7 @@ metadata.Battery = data.Battery;
 metadata.TimeStamp = data.TimeStamp;
 metadata.SampleRate = data.SampleRate;
 metadata.SampleCount = data.SampleCount;
+metadata.PackingFormat = data.PackingFormat;
 
 
 function datetime = parseDT(t)

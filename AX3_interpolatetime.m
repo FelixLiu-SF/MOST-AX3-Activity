@@ -3,7 +3,7 @@ function [t]=AX3_interpolatetime(data)
 % [t]=AX3_interpolatetime(data);
 
 %align AX3 offsets
-ix_offset = (120*([1:size(data.offset,1)]' - 1)) + data.offset; %index of offsets are the true TimeStamps
+ix_offset = (data.SampleCount*([1:size(data.offset,1)]' - 1)) + data.offset; %index of offsets are the true TimeStamps
 
 
 %get rid of duplicate offset index stamps

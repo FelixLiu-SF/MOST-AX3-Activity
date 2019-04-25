@@ -105,7 +105,7 @@ data.offset = fread(fid,numPackets,'int16',510);
 %read accelerometer data
 fseek(fid,1054,'bof');
 
-if numAxesBPS == 3*16 + 0 % packed data, 120 samples, 32-bit
+if data.PackingFormat == (3*16 + 0) % packed data, 120 samples, 32-bit
     
     ACC = fread(fid,[data.SampleCount,Inf],horzcat(num2str(data.SampleCount),'*uint32'),32);
     ACCsz = size(ACC);
@@ -121,7 +121,7 @@ if numAxesBPS == 3*16 + 0 % packed data, 120 samples, 32-bit
     data.y = e .* (y - (int32(1024) .* int32(y >= 512)));
     data.z = e .* (z - (int32(1024) .* int32(z >= 512)));
 
-elseif numAxesBPS == 3*16 + 2 % unpacked data, 80 samples, 48-bit
+elseif data.PackingFormat == (3*16 + 2) % unpacked data, 80 samples, 48-bit
     
     ACC = fread(fid,[data.SampleCount,Inf],horzcat(num2str(3*data.SampleCount),'*int16'),32);
     ACCsz = size(ACC);

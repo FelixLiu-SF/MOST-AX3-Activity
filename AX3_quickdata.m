@@ -102,7 +102,7 @@ clear TIME;
 %read temperature data
 fseek(fid,1044,'bof');                          %1024+20 +2
 RAWTEMP = fread(fid,numPackets,'uint16',510);
-data.Temperature = (RAWTEMP*150.0 - 20500)/1000;
+data.Temperature = (double(RAWTEMP)*150.0 - 20500)/1000;
 clear RAWTEMP;
 
 %read sample offset data
